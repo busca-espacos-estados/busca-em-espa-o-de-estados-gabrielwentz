@@ -7,7 +7,7 @@ from puzzle.result import SearchResult
 class AStar(BaseSearch):
 
     def heuristic(self, state: State) -> int:
-        """Calcula a Distância de Manhattan acumulada para o estado objetivo clássico."""
+        
         distance = 0
         
         # Mapeamento atualizado para refletir o objetivo (1 2 3 / 8 0 4 / 7 6 5)
