@@ -1,59 +1,71 @@
-from __future__ import annotations
-from typing import List, Optional, Tuple
-
-
-GOAL_STATE = (1, 2, 3, 4, 5, 6, 7, 8, 0)
-
+# -*- coding: utf-8 -*-
 
 class State:
-    """Representa um estado do 8-puzzle como tupla imutável de 9 inteiros (0 = espaço vazio)."""
+    def __init__(self, board, parent=None, action=None):
+        # Converte em tupla para garantir que seja imutável e possa ser adicionado em sets (hashable)
+        self.board = tuple(board)  
+        self.parent = parent       
+        self.action = action       
 
-    def __init__(self, tiles: Tuple[int, ...], parent: Optional["State"] = None, action: Optional[str] = None, cost: int = 0):
-        if len(tiles) != 9 or set(tiles) != set(range(9)):
-            raise ValueError("Estado inválido: deve conter exatamente os valores 0-8.")
-        self.tiles = tiles
-        self.parent = parent
-        self.action = action
-        self.cost = cost
+    def neighbors(self):
+        """Gera os estados filhos a partir do espaço vazio (0)"""
+        children = []
+        try:
+            zero_index = self.board.index(0)
+        except ValueError:
+            zero_index = self.board.index('0')
+            
+        row, col = zero_index // 3, zero_index % 3
+        
+        # Movimentos permitidos para o espaço vazio
+        moves = [
+            (-1, 0, 'Cima'),    
+            (1, 0, 'Baixo'),    
+            (0, -1, 'Esquerda'),
+            (0, 1, 'Direita')   
+        ]
+        
+        for dr, dc, action_name in moves:
+            new_row, new_col = row + dr, col + dc
+            
+            # Verifica se o movimento respeita os limites da matriz 3x3
+            if 0 <= new_row < 3 and 0 <= new_col < 3:
+                new_zero_index = new_row * 3 + new_col
+                
+                # Faz a cópia e troca as posições
+                new_board = list(self.board)
+                new_board[zero_index], new_board[new_zero_index] = new_board[new_zero_index], new_board[zero_index]
+                
+                child_state = State(new_board, parent=self, action=action_name)
+                children.append(child_state)
+                
+        return children
+
+    def path(self):
+        """Reconstrói a sequência de estados do inicial até este"""
+        state_sequence = []
+        current = self
+        while current is not None:
+            state_sequence.append(current)
+            current = current.parent
+        return state_sequence[::-1]
+
+    def actions(self):
+        """Retorna a sequência de ações usando path()"""
+        state_path = self.path()
+        return [state.action for state in state_path if state.action is not None]
 
     @property
-    def is_goal(self) -> bool:
-        return self.tiles == GOAL_STATE
+    def cost(self) -> int:
+        """Exigido pelo SearchResult: calcula o custo baseado na quantidade de ações"""
+        return len(self.actions())
 
-    @property
-    def blank_index(self) -> int:
-        return self.tiles.index(0)
+    def __eq__(self, other):
+        return self.board == other.board if isinstance(other, State) else False
 
-    def neighbors(self) -> List["State"]:
-        """Retorna os estados filhos válidos a partir deste estado."""
-        # TODO: implemente a geração de estados filhos
-        raise NotImplementedError
+    def __hash__(self):
+        return hash(self.board)
 
-    def path(self) -> List["State"]:
-        """Retorna a sequência de estados do estado inicial até este."""
-        # TODO: implemente a reconstrução do caminho usando self.parent
-        raise NotImplementedError
-
-    def actions(self) -> List[str]:
-        """Retorna a sequência de ações do estado inicial até este."""
-        # TODO: implemente usando path()
-        raise NotImplementedError
-
-    def __eq__(self, other: object) -> bool:
-        return isinstance(other, State) and self.tiles == other.tiles
-
-    def __hash__(self) -> int:
-        return hash(self.tiles)
-
-    def __lt__(self, other: "State") -> bool:
-        return self.cost < other.cost
-
-    def __repr__(self) -> str:
-        t = self.tiles
-        return (
-            f"+-------+\n"
-            f"| {t[0]} {t[1]} {t[2]} |\n"
-            f"| {t[3]} {t[4]} {t[5]} |\n"
-            f"| {t[6]} {t[7]} {t[8]} |\n"
-            f"+-------+"
-        ).replace("0", " ")
+    def __repr__(self):
+        # Desenha o tabuleiro de forma visual no console
+        return f"+-------+\n| {self.board[0]} {self.board[1]} {self.board[2]} |\n| {self.board[3]} {self.board[4]} {self.board[5]} |\n| {self.board[6]} {self.board[7]} {self.board[8]} |\n+-------+"
