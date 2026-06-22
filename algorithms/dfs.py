@@ -5,7 +5,7 @@ from puzzle.result import SearchResult
 
 class DFS(BaseSearch):
     def search(self, initial: State) -> SearchResult:
-        # Estado final clássico do livro texto para o 8-puzzle
+        
         goal_board = (1, 2, 3, 8, 0, 4, 7, 6, 5)
         
         frontier = [initial]
